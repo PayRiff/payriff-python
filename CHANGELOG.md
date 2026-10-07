@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2 (2026-10-07)
+
+- First release on PyPI.
+
 ## 0.1.1 (2026-10-07)
 
 - Published as `payriff-python` (the `payriff` name on PyPI is not ours); the import name stays `payriff`.

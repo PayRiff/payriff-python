@@ -10,12 +10,19 @@ transactions, payouts and invoices.
 
 ## Installation
 
-> The package is not yet published to PyPI. Until then, install it from GitHub:
-> `pip install git+https://github.com/PayRiff/payriff-python@v0.1.1`
-
 ```bash
-pip install payriff-python
+pip install "payriff-python @ git+https://github.com/PayRiff/payriff-python@v0.1.1"
 ```
+
+Or in `requirements.txt`:
+
+```
+payriff-python @ git+https://github.com/PayRiff/payriff-python@v0.1.1
+```
+
+The import name is `payriff`.
+
+> PyPI publishing is coming. After that, the command becomes `pip install payriff-python`.
 
 ## Quick start
 

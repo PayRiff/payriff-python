@@ -10,10 +10,11 @@ transactions, payouts and invoices.
 
 ## Installation
 
-> The package is not yet published to PyPI.
+> The package is not yet published to PyPI. Until then, install it from GitHub:
+> `pip install git+https://github.com/PayRiff/payriff-python@v0.1.1`
 
 ```bash
-pip install payriff
+pip install payriff-python
 ```
 
 ## Quick start

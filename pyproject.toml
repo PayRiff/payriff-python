@@ -3,8 +3,8 @@ requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
 [project]
-name = "payriff"
-version = "0.1.0"
+name = "payriff-python"
+version = "0.1.1"
 description = "Python client for the Payriff merchant API"
 readme = "README.md"
 license = "MIT"
@@ -19,7 +19,7 @@ classifiers = [
 ]
 
 [project.urls]
-Repository = "https://github.com/payriff/payriff-python"
+Repository = "https://github.com/PayRiff/payriff-python"
 
 [project.optional-dependencies]
 test = ["pytest>=8"]

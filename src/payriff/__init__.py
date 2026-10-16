@@ -1,5 +1,4 @@
 from ._version import VERSION as __version__
-from .card import CardData
 from .client import Payriff
 from .errors import (
     ApiError,
@@ -36,6 +35,7 @@ from .models import (
     PayoutResult,
     PayoutStatus,
     PayoutSummary,
+    Region,
     SavedCard,
     Transaction,
     TransactionResponse,
@@ -46,7 +46,6 @@ from .webhooks import parse_order_callback
 __all__ = [
     "__version__",
     "Payriff",
-    "CardData",
     "parse_order_callback",
     "PayriffError",
     "ApiError",
@@ -80,6 +79,7 @@ __all__ = [
     "PayoutResult",
     "PayoutStatus",
     "PayoutSummary",
+    "Region",
     "SavedCard",
     "Transaction",
     "TransactionResponse",

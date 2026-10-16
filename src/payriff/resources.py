@@ -7,7 +7,6 @@ from typing import Union
 
 from ._transport import ApiRequest, Transport
 from ._util import compact, filter_date, format_datetime, page_query, required, segment
-from .card import CardData, CardEncryptor
 from .models import (
     AutoPayResponse,
     AutoPaymentType,
@@ -15,7 +14,6 @@ from .models import (
     CardSaveResponse,
     CreateOrderResponse,
     Currency,
-    DirectPayResponse,
     Installment,
     InstallmentProductType,
     Invoice,
@@ -43,14 +41,15 @@ def _amount(value: Amount | None) -> Decimal | None:
 
 
 class OrdersApi:
-    def __init__(self, transport: Transport):
+    def __init__(self, transport: Transport, default_currency: str):
         self._transport = transport
+        self._default_currency = default_currency
 
     def create(
         self,
         *,
         amount: Amount,
-        currency: Currency | str = Currency.AZN,
+        currency: Currency | str | None = None,
         language: Language | str | None = None,
         operation: Operation | str = Operation.PURCHASE,
         description: str | None = None,
@@ -68,7 +67,7 @@ class OrdersApi:
     ) -> CreateOrderResponse:
         body = compact({
             "amount": _amount(required(amount, "amount")),
-            "currency": required(currency, "currency"),
+            "currency": currency or self._default_currency,
             "language": language,
             "operation": required(operation, "operation"),
             "description": description,
@@ -130,48 +129,9 @@ class OrdersApi:
 
 
 class PaymentsApi:
-    def __init__(self, transport: Transport, card_encryptor: CardEncryptor):
+    def __init__(self, transport: Transport, default_currency: str):
         self._transport = transport
-        self._card_encryptor = card_encryptor
-
-    def direct_pay(
-        self,
-        *,
-        amount: Amount,
-        description: str,
-        card: CardData,
-        operation: Operation | str = Operation.PURCHASE,
-        currency: Currency | str = Currency.AZN,
-        callback_url: str | None = None,
-        three_ds: bool | None = None,
-        custom_fields: dict[str, str] | None = None,
-        card_save: bool = False,
-        request_rrn: str | None = None,
-    ) -> DirectPayResponse:
-        body = compact({
-            "amount": _amount(required(amount, "amount")),
-            "operation": required(operation, "operation"),
-            "currency": required(currency, "currency"),
-            "description": required(description, "description"),
-            "callbackUrl": callback_url,
-            "threeDS": three_ds,
-            "customFields": custom_fields,
-        })
-        if not isinstance(card, CardData):
-            raise ValueError("card must be a CardData")
-        encrypted = self._card_encryptor.encrypt(card)
-        body["paymentData"] = {
-            "paymentWay": "DIRECT",
-            "encryptedMessage": encrypted.encrypted_message,
-            "cardSave": bool(card_save),
-        }
-        payload = self._transport.execute(ApiRequest(
-            "POST",
-            "/api/v3/directPay",
-            headers={"X-REQUEST-RRN": request_rrn, "x-secret-key": encrypted.secret_key},
-            body=body,
-        ))
-        return from_dict(DirectPayResponse, payload)  # type: ignore[return-value]
+        self._default_currency = default_currency
 
     def auto_pay(
         self,
@@ -180,7 +140,7 @@ class PaymentsApi:
         amount: Amount,
         description: str,
         operation: Operation | str = Operation.PURCHASE,
-        currency: Currency | str = Currency.AZN,
+        currency: Currency | str | None = None,
         callback_url: str | None = None,
         three_ds: bool | None = None,
         one_click_payment: bool | None = None,
@@ -190,7 +150,7 @@ class PaymentsApi:
             "cardUuid": required(card_uuid, "card_uuid"),
             "amount": _amount(required(amount, "amount")),
             "operation": required(operation, "operation"),
-            "currency": required(currency, "currency"),
+            "currency": currency or self._default_currency,
             "description": required(description, "description"),
             "callbackUrl": callback_url,
             "threeDS": three_ds,
@@ -378,15 +338,16 @@ class PayoutsApi:
 
 
 class InvoicesApi:
-    def __init__(self, transport: Transport):
+    def __init__(self, transport: Transport, default_currency: str):
         self._transport = transport
+        self._default_currency = default_currency
 
     def create(
         self,
         *,
         amount: Amount | None = None,
         amount_dynamic: bool | None = None,
-        currency: Currency | str = Currency.AZN,
+        currency: Currency | str | None = None,
         language: Language | str | None = None,
         full_name: str | None = None,
         email: str | None = None,
@@ -412,7 +373,7 @@ class InvoicesApi:
         body = compact({
             "amount": _amount(amount),
             "amountDynamic": amount_dynamic,
-            "currencyType": currency,
+            "currencyType": currency or self._default_currency,
             "languageType": language,
             "fullName": full_name,
             "email": email,

@@ -1,12 +1,12 @@
 # Payriff Python SDK
 
-Python client for the Payriff merchant API: orders, direct (host-to-host) card payments, saved cards,
+Python client for the Payriff merchant API: orders, saved-card payments, saved cards,
 transactions, payouts and invoices.
 
 - Python 3.10 or newer
-- One runtime dependency (`cryptography`, for card encryption)
+- No runtime dependencies
 - Fully typed
-- Talks to `https://api.payriff.com`
+- Talks to `https://api.payriff.com` (Azerbaijan) or `https://api.gccpay.sa` (Saudi Arabia)
 
 ## Installation
 
@@ -46,9 +46,26 @@ Create one `Payriff` instance and reuse it. It is safe to share between threads.
 | `app_key` | yes | — | Application key from the Payriff dashboard. |
 | `merchant_id` | for payouts and invoices | — | Merchant ID (e.g. `ES1000000`). |
 | `timeout` | no | `60.0` | Socket timeout in seconds. Bank operations can take tens of seconds. |
-| `card_encryption_key` | no | built-in Payriff key | Only if Payriff rotates the card-encryption key. Base64 or PEM. |
+| `region` | no | `Region.AZERBAIJAN` | API region. Sets the base URL and the default currency. |
+| `base_url` | no | from `region` | Override the API URL, e.g. for testing. The currency still comes from `region`. |
 
 Keep the app key in an environment variable or secret store. Never commit it.
+
+### Saudi Arabia
+
+```python
+from payriff import Payriff, Region
+
+payriff = Payriff(os.environ["PAYRIFF_APP_KEY"], region=Region.SAUDI)
+```
+
+| Region | API | Default currency |
+|---|---|---|
+| `Region.AZERBAIJAN` | `https://api.payriff.com` | `AZN` |
+| `Region.SAUDI` | `https://api.gccpay.sa` | `SAR` |
+
+Use the app key from the dashboard of the same region (`dashboard.gccpay.sa` for Saudi Arabia).
+A `currency` passed on a request always wins over the region default.
 
 ## Orders
 
@@ -57,7 +74,7 @@ from payriff import Currency, Language, Operation
 
 created = payriff.orders.create(
     amount=Decimal("25.00"),
-    currency=Currency.AZN,            # default AZN
+    currency=Currency.AZN,            # default: the region currency
     operation=Operation.PRE_AUTH,     # default PURCHASE
     language=Language.AZ,
     description="Booking #77",
@@ -81,39 +98,7 @@ receipt_pdf: bytes = payriff.orders.download_receipt(created.order_id)
 
 Amounts are returned as `Decimal`. You can pass `Decimal`, `int`, `float` or a numeric string.
 
-## Direct payments (host-to-host)
-
-You collect the card details yourself, and the SDK encrypts them before sending
-(AES-256-GCM + RSA-OAEP). Raw card data never leaves your server in clear text, but your
-systems still handle card data, so PCI DSS requirements apply to you.
-
-```python
-from payriff import CardData
-
-result = payriff.payments.direct_pay(
-    amount=Decimal("1.00"),
-    description="Order #1002",
-    callback_url="https://shop.example/payriff/callback",
-    request_rrn="order-1002",
-    card=CardData(
-        pan="4169 7413 3015 1979",
-        card_holder="JOHN DOE",
-        expiry_month="11",
-        expiry_year="27",
-        cvv="123",
-    ),
-)
-
-if result.redirect:
-    # 3-D Secure: send the customer's browser to result.redirect_url.
-    # The final status arrives via your callback or payriff.orders.get(result.order_id).
-    pass
-```
-
-`CardData` strips spaces and dashes, pads the month (`1` → `01`), expands a 2-digit year (`27` → `2027`)
-and rejects malformed values before any network call. Its `repr()` masks the PAN and omits the CVV.
-
-### Charging a saved card
+## Charging a saved card
 
 ```python
 charge = payriff.payments.auto_pay(

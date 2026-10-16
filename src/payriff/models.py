@@ -32,6 +32,19 @@ class Currency(_Enum):
     SAR = "SAR"
 
 
+class Region(_Enum):
+    AZERBAIJAN = "azerbaijan"
+    SAUDI = "saudi"
+
+    @property
+    def base_url(self) -> str:
+        return "https://api.gccpay.sa" if self is Region.SAUDI else "https://api.payriff.com"
+
+    @property
+    def currency(self) -> Currency:
+        return Currency.SAR if self is Region.SAUDI else Currency.AZN
+
+
 class Language(_Enum):
     AZ = "AZ"
     EN = "EN"
